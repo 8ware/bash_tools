@@ -1,0 +1,72 @@
+#! /bin/bash
+#
+# Bash tools
+# Version 0.2
+#
+
+#
+# TODO
+# - write documentation
+#
+
+if [ "`basename $0`" == ".bash_tools" ]; then
+	echo "$0: None executable content."
+	exit
+fi
+
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+RED="\033[0;31m"
+WHITE="\033[0;37m"
+
+
+#
+# prints a debug-message if the BASH_TOOLS_VERBOSE
+# variable is set. enter
+#
+#     export BASH_TOOLS_VERBOSE=1
+#
+# to enable debug-messages. to disable these messages
+# type
+#
+#     unset BASH_TOOLS_VERBOSE
+#
+# to unset the flag. for setting it permanently add
+# it to your ~/.bashrc. to set the verbose-flag only
+# to receive status-messages on initialization add
+# following lines to the .bashrc:
+#
+#   if [ -f ~/.bash_tools ]; then
+#       BASH_TOOLS_VERBOSE=1
+#       . ~/.bash_tools
+#       unset BASH_TOOLS_VERBOSE
+#   fi
+#
+__bash_tools_echo() {
+	if [ $BASH_TOOLS_VERBOSE ]; then
+		echo -e $@
+	fi
+}
+
+__bash_tools_require() {
+	for req in $@; do
+		if [ "$(type $req 2>&1 | grep "not found")" ]; then
+			false
+			return
+		fi
+	done
+	true
+}
+
+
+__bash_tools_echo "${WHITE}BASH TOOLS"
+
+for extension in $(ls ~/.bash_tools_*); do
+	if [ "$(file $extension | grep "Bourne-Again shell")" ]; then
+		ID=$(echo $extension | sed "s/.*bash_tools_//" | tr a-z A-Z)
+		. $extension \
+				&& __bash_tools_echo ">   ${GREEN}$ID[${BLUE} ENABLED ${GREEN}]${WHITE}" \
+				|| __bash_tools_echo ">   ${GREEN}$ID[${RED} DISABLED ${GREEN}]${WHITE}"
+	fi
+done
+

@@ -1,0 +1,24 @@
+#! /bin/bash
+#
+# Perl tools for bash
+# Version 0.1
+#
+
+#
+# TODO
+# - write documentation
+#
+
+if [ "`basename $0`" == ".bash_tools_perl" ]; then
+	echo "$0: None executable content."
+	exit
+fi
+
+__bash_tools_require 'perl' || return 1
+
+
+perltest() {
+	path=${1:?too less arguments}
+	perl -I "$(perl -e "print \"$path\" =~ m|(.*/).*|")../lib" $path
+}
+

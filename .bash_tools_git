@@ -1,0 +1,60 @@
+#! /bin/bash
+#
+# Git tools for bash
+# Version 0.2
+#
+
+#
+# TODO
+# - write documentation
+#
+
+if [ "`basename $0`" == ".bash_tools_git" ]; then
+	echo "$0: None executable content."
+	exit
+fi
+
+__bash_tools_require 'git' || return 1
+
+
+BASH_TOOLS_GIT_BIN=$(which git)
+
+function git() {
+	if [ $# -eq 0 ]; then
+		$BASH_TOOLS_GIT_BIN status
+	else
+		$BASH_TOOLS_GIT_BIN "$@"
+	fi
+}
+
+#
+# executes the original command given with its arguments
+# if the current directory is within a git-repository or
+# executes the original.
+#
+function __bash_tools_git_action() {
+	local action=$1
+	shift
+	if [ $(__gitdir) ]; then
+		__bash_tools_echo "using git-specific $action"
+		output=$($BASH_TOOLS_GIT_BIN $action "$@" 2>&1)
+		if [ "$(echo $output | grep "not under version control")" ] \
+				|| [ "$(echo $output | grep "is outside repository")" ] \
+				|| [ "$(echo $output | grep "did not match any files")" ]; then
+			__bash_tools_echo "using ordinary $action"
+			$(which $action) "$@"
+		fi
+	else
+		__bash_tools_echo "using ordinary $action"
+		$(which $action) "$@"
+	fi
+}
+
+function mv() {
+	__bash_tools_git_action 'mv' "$@"
+}
+
+function rm() {
+	__bash_tools_git_action 'rm' "$@"
+}
+
