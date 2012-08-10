@@ -1,12 +1,17 @@
 #! /bin/bash
 #
 # Git tools for bash
-# Version 0.2
+# Version 0.3
 #
 
 #
 # TODO
 # - write documentation
+# - when moving a file which is under version control outside the
+#   repository an error-message should be printed instead of using
+#   the ordinary 'mv'
+# - write bash-completion for git-extensions, especially for new
+#   functionalities, like ignore
 #
 
 if [ "`basename $0`" == ".bash_tools_git" ]; then
@@ -17,13 +22,80 @@ fi
 __bash_tools_require 'git' || return 1
 
 
-BASH_TOOLS_GIT_BIN=$(which git)
+function __bash_tools_git_ext() {
+	extensions="ignore"
+	for ext in $extensions; do
+		if [ $ext == $1 ]; then
+			echo $ext
+			return
+		fi
+	done
+}
+
+#
+# IDEA
+# - turn globbing of when auto-complete 'ignore' and turn it on again
+#   before the function returns, so '*.bak' must not be quoted
+#   (turn off with 'set -f' and on with 'set +f')
+# TODO
+# - provide flag to create new .gitignore-file in current directory
+#
+function __bash_tools_git_ext_ignore() {
+	local gitignore="$(dirname $(__gitdir))/.gitignore"
+	if [ $# -eq 0 ]; then
+		cat $gitignore
+		return
+	elif [ "$1" == '--edit' ]; then
+		$(git config core.editor) $gitignore
+		return
+	fi
+	if [ "$1" == '--init' ]; then
+		shift
+		if [ ! -f "$gitignore" ]; then
+			__bash_tools_echo "initializing .gitignore-file..."
+			__bash_tools_git_ext_ignore "general{*.bak}" "vim{.*.sw*}" "$@"
+			return
+			echo -e "#\n# general\n#\n*.bak\n\n#\n# vim\n#\n.*.sw*\n" >> $gitignore
+		else
+			echo "will initialize .gitignore only, if it does not exist" >&2
+		fi
+	fi
+	local entries=""
+	for element in "$@"; do
+		if [ "$(echo $element | grep "^--")" ]; then
+			continue
+		fi
+		# git ignore "general{*.bak *.fuse}" vim{.*.sw*} test "{a b}"
+		local description=$(echo $element | sed "s/{.\+}//")
+		if [ "$description" == "$element" ]; then
+			description=""
+		fi
+		local entry=""
+		local items=$(echo $element | sed "s/\(^.*{\|}$\)//g")
+		if [ $description ]; then
+			entry="#\n# $description\n#\n"
+		fi
+		set -f
+		for item in $items; do
+			entry="$entry$item\n"
+		done
+		set +f
+		entries="$entries$entry\n"
+	done
+	echo -en $entries >> $gitignore
+}
 
 function git() {
 	if [ $# -eq 0 ]; then
-		$BASH_TOOLS_GIT_BIN status
+		$(which git) status
 	else
-		$BASH_TOOLS_GIT_BIN "$@"
+		action=$(__bash_tools_git_ext $1)
+		if [ $action ]; then
+			shift
+			__bash_tools_git_ext_$action "$@"
+		else
+			$(which git) "$@"
+		fi
 	fi
 }
 
@@ -37,12 +109,15 @@ function __bash_tools_git_action() {
 	shift
 	if [ $(__gitdir) ]; then
 		__bash_tools_echo "using git-specific $action"
-		output=$($BASH_TOOLS_GIT_BIN $action "$@" 2>&1)
+		output="$(git $action "$@" 2>&1)"
 		if [ "$(echo $output | grep "not under version control")" ] \
 				|| [ "$(echo $output | grep "is outside repository")" ] \
-				|| [ "$(echo $output | grep "did not match any files")" ]; then
+				|| [ "$(echo $output | grep "did not match any files")" ] \
+				|| [ "$(echo $output | grep "must be run in a work tree")" ]; then
 			__bash_tools_echo "using ordinary $action"
 			$(which $action) "$@"
+		else
+			echo -e "$output"
 		fi
 	else
 		__bash_tools_echo "using ordinary $action"
