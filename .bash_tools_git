@@ -107,7 +107,7 @@ function git() {
 function __bash_tools_git_action() {
 	local action=$1
 	shift
-	if [ $(__gitdir) ]; then
+	if [ "$(__gitdir)" ]; then
 		__bash_tools_echo "using git-specific $action"
 		output="$(git $action "$@" 2>&1)"
 		if [ "$(echo $output | grep "not under version control")" ] \
@@ -116,7 +116,7 @@ function __bash_tools_git_action() {
 				|| [ "$(echo $output | grep "must be run in a work tree")" ]; then
 			__bash_tools_echo "using ordinary $action"
 			$(which $action) "$@"
-		elif [ $output ]; then
+		elif [ "$output" ]; then
 			echo -e "$output"
 		fi
 	else
