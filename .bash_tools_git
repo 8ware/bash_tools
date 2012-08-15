@@ -14,7 +14,7 @@
 #   functionalities, like ignore
 #
 
-if [ "`basename $0`" == ".bash_tools_git" ]; then
+if [ "$(basename "$0")" == ".bash_tools_git" ]; then
 	echo "$0: None executable content."
 	exit
 fi

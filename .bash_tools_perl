@@ -9,7 +9,7 @@
 # - write documentation
 #
 
-if [ "`basename $0`" == ".bash_tools_perl" ]; then
+if [ "$(basename "$0")" == ".bash_tools_perl" ]; then
 	echo "$0: None executable content."
 	exit
 fi
