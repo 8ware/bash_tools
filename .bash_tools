@@ -9,7 +9,7 @@
 # - write documentation
 #
 
-if [ "$(basename "$0")" == ".bash_tools" ]; then
+if [ "$(basename -- "$0")" == ".bash_tools" ]; then
 	echo "$0: None executable content."
 	exit
 fi
