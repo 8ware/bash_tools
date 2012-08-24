@@ -1,0 +1,28 @@
+#! /bin/bash
+#
+# Vim tools for bash
+# Version 0.1
+#
+
+if [ "$(basename -- "$0")" == ".bash_tools_vim" ]; then
+	echo "$0: None executable content."
+	exit
+fi
+
+__bash_tools_require 'vim' || return 1
+
+
+function vim() {
+	local vim="$(which vim)" # -p option is added by alias
+	if [ "$(echo $@ | grep .tex)" ]; then
+		#
+		# TODO
+		# apply options for all opened tabs (now it's just the first one)
+		#
+		__bash_tools_echo "vim: set textwidth=79"
+		$vim -c "set textwidth=79" "$@"
+	else
+		$vim "$@"
+	fi
+}
+
