@@ -85,6 +85,23 @@ function __bash_tools_git_ext_ignore() {
 	echo -en $entries >> $gitignore
 }
 
+function __bash_tools_git_ext_subup() {
+	local out=$(git submodule init)
+	if [ ! "$out" ]; then
+		return
+	fi
+	echo "Initializing submodules recursively from '$PWD'"
+	echo "$out"
+	local modules=$(echo "$out" | perl -pe "s/(^.+registered for path '|'$)//g")
+	git submodule update
+	for module in $modules; do
+		builtin cd "$module"
+		echo ""
+		__bash_tools_git_ext_subup
+		builtin cd $OLDPWD # TODO change to origin dir
+	done
+}
+
 function git() {
 	if [ $# -eq 0 ]; then
 		$(which git) status
@@ -110,14 +127,16 @@ function __bash_tools_git_action() {
 	if [ "$(__gitdir)" ]; then
 		__bash_tools_echo "using git-specific $action"
 		output="$(git $action "$@" 2>&1)"
+		# maybe check just for "^fatal" ?
 		if [ "$(echo $output | grep "not under version control")" ] \
 				|| [ "$(echo $output | grep "is outside repository")" ] \
 				|| [ "$(echo $output | grep "did not match any files")" ] \
-				|| [ "$(echo $output | grep "must be run in a work tree")" ]; then
+				|| [ "$(echo $output | grep "must be run in a work tree")" ] \
+				|| [ "$(echo $output | grep "source directory is empty")" ]; then
 			__bash_tools_echo "using ordinary $action"
 			$(which $action) "$@"
 		elif [ "$output" ]; then
-			echo -e "$output"
+			echo -e "git: $output"
 		fi
 	else
 		__bash_tools_echo "using ordinary $action"
