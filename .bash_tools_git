@@ -110,6 +110,10 @@ function __bash_tools_git_action() {
 	if [ "$(__gitdir)" ]; then
 		__bash_tools_echo "using git-specific $action"
 		output="$(git $action "$@" 2>&1)"
+		#
+		# TODO check only 'fatal: *' or check in a for-loop, defining
+		#      exceptions in an array
+		#
 		if [ "$(echo $output | grep "not under version control")" ] \
 				|| [ "$(echo $output | grep "is outside repository")" ] \
 				|| [ "$(echo $output | grep "did not match any files")" ] \
